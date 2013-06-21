@@ -2,7 +2,16 @@ from util import hook, http
 import socket
 import json
 import struct
+import DNS ## Please remember to install the dependancy 'pydns'
 
+def mccolorconvert(motd):
+    empty = ""
+    colors = [u"\x0300,\xa7f", u"\x0301,\xa70", u"\x0302,\xa71", u"\x0303,\xa72", u"\x0304,\xa7c", u"\x0305,\xa74", u"\x0306,\xa75", u"\x0307,\xa76", u"\x0308,\xa7e", u"\x0309,\xa7a", u"\x0310,\xa73", u"\x0311,\xa7b", u"\x0312,\xa71", u"\x0313,\xa7d", u"\x0314,\xa78", u"\x0315,\xa77", u"\x02,\xa7l", u"\x0310,\xa79", u"\x09,\xa7o", u"\x13,\xa7m", u"\x0f,\xa7r", u"\x15,\xa7n"];
+    for s in colors:
+        lcol = s.split(",")
+        motd = motd.replace(lcol[1], lcol[0])
+    motd = motd.replace(u"\xa7k", empty)
+    return motd
 
 def mcping_connect(host, port):
     sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -25,7 +34,7 @@ def mcping_connect(host, port):
             message = u"{} - {}/{} players".format(data[0], data[1], data[2])
         else:
             # decoded data, server is using new format
-            message = u"{} - {} - {}/{} players".format(data[3], data[2], data[4], data[5])
+            message = u"{} \x0f- {} - {}/{} players".format(data[3], data[2], data[4], data[5])
 
         sock.close()
         return message
@@ -34,6 +43,15 @@ def mcping_connect(host, port):
         return "Error pinging " + host + ":" + str(port) +\
         ", is it up? Double-check your address!"
 
+def srvData(domain):
+    DNS.ParseResolvConf()
+    srv_req = DNS.Request(qtype = 'srv')
+    srv_result = srv_req.req('_minecraft._tcp.%s' % domain)
+
+    for getsrv in srv_result.answers:
+        if getsrv['typename'] == 'SRV':
+            data = [getsrv['data'][2],getsrv['data'][3]]
+            return data
 
 @hook.command(autohelp=False)
 def mclogin(inp, bot=None):
@@ -61,18 +79,18 @@ def mcstatus(inp, say=None):
     except (http.URLError, http.HTTPError) as e:
         return "Unable to get Minecraft server status: {}".format(e)
 
-    # change the json from a list of dictionaies to a dictionary
+    # lets just reformat this data to get in a nice format
     data = json.loads(request.replace("}", "").replace("{", "").replace("]", "}").replace("[", "{"))
 
     out = []
     # use a loop so we don't have to update it if they add more servers
     for server, status in data.items():
         if status == "green":
-            out.append("{} is \x033\x02online\x02\x03".format(server))
+            out.append("{} is \x033\x02online\x02\x0f".format(server))
         else:
-            out.append("{} is \x034\x02offline\x02\x03".format(server))
+            out.append("{} is \x034\x02offline\x02\x0f".format(server))
 
-    return ", ".join(out) + "."
+    return "\x0f" + ", ".join(out) + "."
 
 
 @hook.command("haspaid")
@@ -104,7 +122,21 @@ def mcping(inp):
             port = int(port)
         except:
             return "error: invalid port!"
+        return mccolorconvert(mcping_connect(host, port))
+
     else:
         host = inp
         port = 25565
-    return mcping_connect(host, port)
+        rdata = mccolorconvert(mcping_connect(host, port))
+
+        if 'is it up' in rdata:
+            getdata = srvData(inp)
+            try:
+                host = str(getdata[1])
+                port = int(getdata[0])
+                return mccolorconvert(mcping_connect(host, port))
+            except: 
+                return "Error pinging %s, is it up? Double-check your address!" % inp
+
+        else:
+            return rdata
