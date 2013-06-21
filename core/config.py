@@ -37,7 +37,8 @@ if not os.path.exists('config'):
             "wolframalpha": "INSERT API KEY FROM wolframalpha.com HERE",
             "lastfm": "INSERT API KEY FROM lastfm HERE",
             "mc_user": "INSERT minecraft USERNAME HERE",
-            "mc_pass": "INSERT minecraft PASSWORD HERE"
+            "mc_pass": "INSERT minecraft PASSWORD HERE",
+            "imgur_client_id": "INSERT imgur.com OAUTH CLIENT-ID HERE"
           },
           "plugins":
           {
