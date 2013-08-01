@@ -17,3 +17,5 @@ gold block
 fire extinguisher
 heavy rock
 chunk of dirt
+xboxone
+Nokia 6610i
